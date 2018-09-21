@@ -14,16 +14,17 @@
 
 #include <EEPROM.h>
 #include "ssd1306.h"
+#include "backdoor.h"
 
 int const defaultLng = 9;
 long const defaultCounter = 1000000;
+long counter = defaultCounter;
 
-long getDefaultCounter() {
-	return defaultCounter;
-}
+int const defaultAddr = 10;
+int const backupAddr = defaultAddr + 4;
 
-String formatCounter(long countdowm) {
-	String str = String(countdowm);
+String formatCounter() {
+	String str = String(counter);
 	String formatted = "";
 	int num = 0;
 
@@ -72,8 +73,8 @@ long EEPROMReadlong(int address) {
 	return ((four << 0) & 0xFF) + ((three << 8) & 0xFFFF) + ((two << 16) & 0xFFFFFF) + ((one << 24) & 0xFFFFFFFF);
 }
 
-static void showCounter(long num) {
-	String str = formatCounter(num);
+static void showCounter() {
+	String str = formatCounter();
 	char cstr[16];
 	str.toCharArray(cstr, 16);
 	ssd1306_printFixedN(1, 32, cstr, STYLE_NORMAL, FONT_SIZE_2X);
@@ -87,64 +88,74 @@ void openDoor() {
 	Serial.println("open door");
 }
 
-void isFinished(long num) {
-	if (num == 0) {
+void isFinished() {
+	if (counter == 0) {
 		ssd1306_clearScreen();
 		ssd1306_printFixedN(6, 32, "CONSEGUIDO", STYLE_NORMAL, FONT_SIZE_2X);
 		openDoor();
-	} else if (num > 0)	{
-		showCounter(num);
+	} else if (counter > 0)	{
+		showCounter();
 
-		if(num == defaultCounter) {
+		if(counter == defaultCounter) {
 			closeDoor();
 		}
 	}
 }
 
-int getAddrBackup(int addr) {
-	return addr + 4;
+void startMsg() {
+	ssd1306_clearScreen();
+	ssd1306_printFixedN(6, 32, " WELCOME", STYLE_NORMAL, FONT_SIZE_2X);
+	delay(3000);
+	ssd1306_clearScreen();
+	isFinished();
 }
 
-long readCounter(int addr) {
-	int addrBackup = getAddrBackup(addr);
-	long num = -1;
-	long value = EEPROMReadlong(addr);
-	long backup = EEPROMReadlong(addrBackup);
+void retrieveCounter() {
+	long value = EEPROMReadlong(defaultAddr);
+	long backup = EEPROMReadlong(backupAddr);
 
 	Serial.print("Read: ");
 	Serial.println(value);
 
 	if (value == backup && value > 0) {
-		num = value;
+		counter = value;
 	} else if (value > 0) {
-		num = value;
+		counter = value;
 	} else if (backup > 0) {
-		num = backup;
-	}
-
-	return num;
+		counter = backup;
+	}	
 }
 
-void saveCounter(int addr, long num) {
-	if (num % 100 == 0) {
+void saveCounter() {
+	if (counter % 100 == 0) {
 		Serial.print("Save: ");
-		Serial.println(num);
-		int addrBackup = getAddrBackup(addr);
-		EEPROMWritelong(addr, num);
-		EEPROMWritelong(addrBackup, num);
+		Serial.println(counter);
+		EEPROMWritelong(defaultAddr, counter);
+		EEPROMWritelong(backupAddr, counter);
 	}
-}
-
-void startMsg(long num) {
-	ssd1306_clearScreen();
-	ssd1306_printFixedN(6, 32, " WELCOME", STYLE_NORMAL, FONT_SIZE_2X);
-	delay(3000);
-	ssd1306_clearScreen();
-	isFinished(num);
 }
 
 void initDisplay() {
 	ssd1306_setFixedFont(ssd1306xled_font6x8);
 	ssd1306_128x64_i2c_init();
 	ssd1306_fillScreen(0x00);
+}
+
+void downCounter() {
+	if (counter > 0) {
+		counter--;
+		saveCounter();
+		isFinished();
+	}
+}
+
+void buttonClicked(boolean state1, boolean state2) {
+	boolean isSuccess = checkBackDoor(state1, state2);
+
+	if (isSuccess && counter > 0) {
+		counter = 11;
+	}				
+
+	downCounter();
+	// delay(1000);
 }
