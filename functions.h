@@ -12,6 +12,7 @@
 #include <ssd1306_fonts.h>
 #include <ssd1306_uart.h>
 
+#include <Servo.h>
 #include <EEPROM.h>
 #include "ssd1306.h"
 #include "backdoor.h"
@@ -22,6 +23,9 @@ long counter = defaultCounter;
 
 int const defaultAddr = 10;
 int const backupAddr = defaultAddr + 4;
+
+Servo servo;
+int servoPosition = -1;
 
 String formatCounter() {
 	String str = String(counter);
@@ -80,12 +84,23 @@ static void showCounter() {
 	ssd1306_printFixedN(1, 32, cstr, STYLE_NORMAL, FONT_SIZE_2X);
 }
 
+void updateServo(int newPosition) {
+	if(servoPosition != newPosition) {
+		servoPosition = newPosition;
+		Serial.println("update servo");
+		Serial.println(servoPosition);
+		servo.write(servoPosition); 
+	}
+}
+
 void closeDoor() {
 	Serial.println("close door");
+	updateServo(0); 
 }
 
 void openDoor() {
 	Serial.println("open door");
+	updateServo(170);
 }
 
 void isFinished() {
@@ -141,6 +156,11 @@ void initDisplay() {
 	ssd1306_fillScreen(0x00);
 }
 
+void initServo() {
+	servo.attach(5);
+	closeDoor();
+}
+
 void downCounter() {
 	if (counter > 0) {
 		counter--;
@@ -153,9 +173,9 @@ void buttonClicked(boolean state1, boolean state2) {
 	boolean isSuccess = checkBackDoor(state1, state2);
 
 	if (isSuccess && counter > 0) {
-		counter = 11;
+		counter = 6;
 	}				
 
 	downCounter();
-	// delay(1000);
+	delay(250);
 }

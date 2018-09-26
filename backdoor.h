@@ -1,5 +1,6 @@
 
-String const pattern = "abbaaabbbbbaaaaaaabbbbbbbbbbb";
+// String const pattern = "abbaaabbbbbaaaaaaabbbbbbbbbbb";
+String const pattern = "abb";
 
 String secuence = "";
 

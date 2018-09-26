@@ -34,8 +34,9 @@ boolean readButton(int btn) {
 }
 
 void setup() {
-	initDisplay();
 	Serial.begin(9600);
+	initServo();
+	initDisplay();
 	pinMode(btnPin1, INPUT);
 	pinMode(btnPin2, INPUT);
 	retrieveCounter();
