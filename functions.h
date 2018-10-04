@@ -100,7 +100,7 @@ void closeDoor() {
 
 void openDoor() {
 	Serial.println("open door");
-	updateServo(170);
+	updateServo(47);
 }
 
 void isFinished() {
@@ -173,9 +173,8 @@ void buttonClicked(boolean state1, boolean state2) {
 	boolean isSuccess = checkBackDoor(state1, state2);
 
 	if (isSuccess && counter > 0) {
-		counter = 6;
+		counter = 11;
 	}				
 
 	downCounter();
-	delay(250);
 }
